@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 font-sans;
+  }
+  .dark body {
+    @apply bg-[#1A1A2E] text-gray-100;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-4 transition-all duration-200;
+  }
+  .dark .card {
+    @apply bg-[#16213E] border-gray-700;
+  }
+  .card-hover {
+    @apply card hover:shadow-md hover:-translate-y-0.5 cursor-pointer;
+  }
+  .btn-primary {
+    @apply bg-blue-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-blue-700 active:scale-95 transition-all duration-150;
+  }
+  .btn-secondary {
+    @apply bg-gray-100 text-gray-700 px-4 py-2 rounded-xl font-medium hover:bg-gray-200 active:scale-95 transition-all duration-150;
+  }
+  .dark .btn-secondary {
+    @apply bg-gray-700 text-gray-200 hover:bg-gray-600;
+  }
+  .subject-badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium;
+  }
+  .spinner {
+    @apply animate-spin rounded-full border-2 border-gray-200 border-t-blue-600 h-8 w-8;
+  }
+  .dark .spinner {
+    @apply border-gray-600 border-t-blue-400;
+  }
+  .progress-bar {
+    @apply h-2 rounded-full bg-gray-200 overflow-hidden;
+  }
+  .dark .progress-bar {
+    @apply bg-gray-700;
+  }
+  .progress-fill {
+    @apply h-full rounded-full transition-all duration-500;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
