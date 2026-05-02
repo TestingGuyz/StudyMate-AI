@@ -16,7 +16,7 @@ React Native mobile app built with Expo for ICSE/CBSE Class 8-10 students.
 
 - React Native (Expo SDK 50)
 - React Navigation (Bottom Tabs + Native Stack)
-- Supabase (Auth + Database + Edge Functions)
+- **Neo4j AuraDB** (Graph Database - Auth + Data Storage)
 - Expo Secure Store (for session persistence)
 
 ## Project Structure
@@ -29,7 +29,7 @@ studymate-mobile/
 ├── src/
 │   ├── components/           # Reusable components
 │   ├── context/
-│   │   └── AuthContext.js    # Auth state + Supabase client
+│   │   └── AuthContext.js    # Auth state + Neo4j client
 │   ├── navigation/
 │   │   └── MainTabNavigator.js
 │   ├── screens/
@@ -43,7 +43,7 @@ studymate-mobile/
 │   │   ├── CalendarScreen.js # Custom calendar
 │   │   └── ProfileScreen.js
 │   └── services/
-│       └── (Supabase client in AuthContext)
+│       └── neo4j.js         # Neo4j driver & queries
 └── assets/                   # App icons and splash
 ```
 
@@ -56,17 +56,18 @@ cd studymate-mobile
 npm install
 ```
 
-### 2. Configure Supabase
+### 2. Configure Neo4j AuraDB
 
-1. Create a Supabase project at https://supabase.com
-2. Copy your project URL and anon key
-3. Update `src/context/AuthContext.js`:
+1. Create a Neo4j AuraDB instance at https://console.neo4j.io/
+2. Copy your connection URI and password
+3. Update `src/services/neo4j.js`:
    ```javascript
-   const supabaseUrl = 'https://your-project.supabase.co';
-   const supabaseAnonKey = 'your-anon-key';
+   const NEO4J_URI = 'neo4j+s://your-instance.databases.neo4j.io';
+   const NEO4J_USER = 'neo4j';
+   const NEO4J_PASSWORD = 'your-password';
    ```
 
-3. Run the SQL setup in Supabase SQL Editor (see `supabase-setup.sql`)
+3. Run the Cypher setup in Neo4j Browser (see `neo4j-setup.cypher`)
 
 ### 3. Start Development
 
@@ -79,178 +80,208 @@ Press:
 - `a` for Android emulator
 - Scan QR code with Expo Go app on physical device
 
-## Supabase Database Schema
+## Neo4j Graph Database Schema
 
-### Tables Required
+### Node Types
 
-```sql
--- Profiles table (extends auth.users)
-create table profiles (
-  id uuid references auth.users primary key,
-  name text not null,
-  class text not null,
-  board text not null,
-  weakSubjects text[] default '{}',
-  examDate date,
-  onboardingComplete boolean default false,
-  darkMode boolean default false,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- Quizzes table
-create table quizzes (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users not null,
-  subject text not null,
-  chapter text not null,
-  difficulty text not null,
-  questionType text not null,
-  score integer not null,
-  totalQuestions integer not null,
-  percentage integer not null,
-  timeTaken integer,
-  wrongAnswers jsonb,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- Events table (calendar)
-create table events (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users not null,
-  title text not null,
-  type text not null, -- 'study', 'exam', 'reminder'
-  subject text,
-  date date not null,
-  time text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- Concept explanations history
-create table concept_explanations (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users not null,
-  topic text not null,
-  explanation text not null,
-  keyPoints text[] default '{}',
-  examMistakes text[] default '{}',
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- Enable RLS
-alter table profiles enable row level security;
-alter table quizzes enable row level security;
-alter table events enable row level security;
-alter table concept_explanations enable row level security;
-
--- RLS Policies
-
--- Profiles: Users can only access their own profile
-create policy "Users can view own profile"
-  on profiles for select
-  using (auth.uid() = id);
-
-create policy "Users can update own profile"
-  on profiles for update
-  using (auth.uid() = id);
-
-create policy "Users can insert own profile"
-  on profiles for insert
-  with check (auth.uid() = id);
-
--- Quizzes: Users can only access their own quizzes
-create policy "Users can view own quizzes"
-  on quizzes for select
-  using (auth.uid() = user_id);
-
-create policy "Users can create own quizzes"
-  on quizzes for insert
-  with check (auth.uid() = user_id);
-
--- Events: Users can only access their own events
-create policy "Users can view own events"
-  on events for select
-  using (auth.uid() = user_id);
-
-create policy "Users can manage own events"
-  on events for all
-  using (auth.uid() = user_id);
-
--- Concept explanations
-create policy "Users can view own explanations"
-  on concept_explanations for select
-  using (auth.uid() = user_id);
-
-create policy "Users can create own explanations"
-  on concept_explanations for insert
-  with check (auth.uid() = user_id);
-
--- Triggers
-
--- Update updated_at on profiles
-create or replace function update_updated_at_column()
-returns trigger as $$
-begin
-  new.updated_at = timezone('utc'::text, now());
-  return new;
-end;
-$$ language plpgsql;
-
-create trigger update_profiles_updated_at
-  before update on profiles
-  for each row
-  execute function update_updated_at_column();
+**User** (Student profile)
+```cypher
+(:User {
+  id: UUID,
+  email: String,
+  password: String,  // Store hashed in production!
+  name: String,
+  class: String,     // '8', '9', '10'
+  board: String,     // 'ICSE', 'CBSE'
+  weakSubjects: [String],
+  examDate: Date,
+  onboardingComplete: Boolean,
+  darkMode: Boolean,
+  createdAt: DateTime,
+  updatedAt: DateTime,
+  lastLogin: DateTime
+})
 ```
 
-### Edge Function for AI
+**Quiz** (Quiz results)
+```cypher
+(:Quiz {
+  id: UUID,
+  subject: String,
+  chapter: String,
+  difficulty: String,
+  questionType: String,
+  score: Integer,
+  totalQuestions: Integer,
+  percentage: Integer,
+  timeTaken: Integer,
+  wrongAnswers: JSON String,
+  createdAt: DateTime
+})
+```
 
-Create a Supabase Edge Function `explain-concept`:
+**Event** (Calendar events)
+```cypher
+(:Event {
+  id: UUID,
+  title: String,
+  type: String,      // 'study', 'exam', 'reminder'
+  subject: String,
+  date: Date,
+  time: String,
+  createdAt: DateTime
+})
+```
 
-```typescript
-// supabase/functions/explain-concept/index.ts
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+**Performance** (Chapter performance tracking)
+```cypher
+(:Performance {
+  id: UUID,
+  userId: String,
+  subject: String,
+  chapter: String,
+  totalQuizzes: Integer,
+  totalScore: Integer,
+  averageScore: Integer,
+  status: String,    // 'green', 'yellow', 'red'
+  lastPracticed: DateTime
+})
+```
 
-const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
+### Relationships
 
-serve(async (req) => {
-  const { topic, simplify, board, studentClass } = await req.json();
+```cypher
+// User takes quizzes
+(u:User)-[:TOOK]->(q:Quiz)
 
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${GROQ_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a tutor for Indian ${board} board Class ${studentClass} students. Return JSON with explanation, keyPoints, and examMistakes.`
-        },
-        {
-          role: 'user',
-          content: `Explain "${topic}" ${simplify ? 'in simple terms for a 14-year-old' : 'in detail'}`
-        }
-      ],
-      response_format: { type: 'json_object' }
-    })
-  });
+// User has calendar events
+(u:User)-[:HAS_EVENT]->(e:Event)
 
-  const data = await response.json();
-  return new Response(data.choices[0].message.content, {
-    headers: { 'Content-Type': 'application/json' }
-  });
-});
+// User has performance tracking per chapter
+(u:User)-[:HAS_PERFORMANCE]->(p:Performance)
+```
+
+### Constraints (run once)
+
+```cypher
+// User email must be unique
+CREATE CONSTRAINT user_email IF NOT EXISTS
+FOR (u:User) REQUIRE u.email IS UNIQUE;
+
+// IDs must be unique
+CREATE CONSTRAINT user_id IF NOT EXISTS
+FOR (u:User) REQUIRE u.id IS UNIQUE;
+
+CREATE CONSTRAINT quiz_id IF NOT EXISTS
+FOR (q:Quiz) REQUIRE q.id IS UNIQUE;
+
+CREATE CONSTRAINT event_id IF NOT EXISTS
+FOR (e:Event) REQUIRE e.id IS UNIQUE;
+
+CREATE CONSTRAINT performance_id IF NOT EXISTS
+FOR (p:Performance) REQUIRE p.id IS UNIQUE;
+```
+
+### Indexes (for performance)
+
+```cypher
+CREATE INDEX quiz_user_date IF NOT EXISTS
+FOR (q:Quiz) ON (q.userId, q.createdAt);
+
+CREATE INDEX event_user_date IF NOT EXISTS
+FOR (e:Event) ON (e.userId, e.date);
+
+CREATE INDEX performance_user IF NOT EXISTS
+FOR (p:Performance) ON (p.userId, p.subject);
+```
+
+## Key Cypher Queries
+
+### Authentication
+```cypher
+// Sign up
+CREATE (u:User {
+  id: randomUUID(),
+  email: $email,
+  password: $password,  // Hash in production!
+  name: $name,
+  class: $class,
+  board: $board,
+  createdAt: datetime()
+})
+RETURN u
+
+// Sign in
+MATCH (u:User {email: $email, password: $password})
+SET u.lastLogin = datetime()
+RETURN u
+```
+
+### Dashboard Stats
+```cypher
+// Get user stats
+MATCH (u:User {id: $userId})-[:TOOK]->(q:Quiz)
+RETURN 
+  count(q) as totalQuizzes,
+  avg(q.percentage) as avgScore,
+  sum(q.timeTaken) as totalTime
+```
+
+### Weak Topics
+```cypher
+// Get weak subjects (red/yellow status)
+MATCH (u:User {id: $userId})-[:HAS_PERFORMANCE]->(p:Performance)
+WHERE p.status IN ['red', 'yellow']
+RETURN p.subject, p.chapter, p.averageScore
+ORDER BY p.averageScore ASC
+```
+
+### Calendar Events
+```cypher
+// Get upcoming events
+MATCH (u:User {id: $userId})-[:HAS_EVENT]->(e:Event)
+WHERE e.date >= date()
+RETURN e
+ORDER BY e.date ASC
+```
+
+### Create Quiz (with performance update)
+```cypher
+MATCH (u:User {id: $userId})
+CREATE (q:Quiz {
+  id: randomUUID(),
+  subject: $subject,
+  chapter: $chapter,
+  score: $score,
+  percentage: $percentage,
+  createdAt: datetime()
+})
+CREATE (u)-[:TOOK]->(q)
+
+// Update or create performance
+MERGE (p:Performance {userId: $userId, subject: $subject, chapter: $chapter})
+ON CREATE SET
+  p.totalQuizzes = 1,
+  p.totalScore = $score,
+  p.averageScore = $score,
+  p.status = CASE WHEN $score >= 75 THEN 'green' WHEN $score >= 50 THEN 'yellow' ELSE 'red' END,
+  p.lastPracticed = datetime()
+ON MATCH SET
+  p.totalQuizzes = p.totalQuizzes + 1,
+  p.totalScore = p.totalScore + $score,
+  p.averageScore = round((p.totalScore + $score) / (p.totalQuizzes + 1)),
+  p.lastPracticed = datetime()
+CREATE (u)-[:HAS_PERFORMANCE]->(p)
 ```
 
 ## Environment Variables
 
 Create `.env` file:
 
-```
-EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```bash
+EXPO_PUBLIC_NEO4J_URI=neo4j+s://your-instance.databases.neo4j.io
+EXPO_PUBLIC_NEO4J_USER=neo4j
+EXPO_PUBLIC_NEO4J_PASSWORD=your-password
 ```
 
 ## Build for Production
@@ -286,12 +317,41 @@ eas build --platform ios    # or android
 
 | Feature | Web App (React) | Mobile App (React Native) |
 |---------|-----------------|---------------------------|
-| Storage | localStorage | Supabase Database |
-| Auth | None (local) | Supabase Auth |
-| AI | Groq API (direct) | Supabase Edge Functions |
+| Storage | localStorage | Neo4j AuraDB |
+| Auth | None (local) | Neo4j Custom Auth |
+| AI | Groq API (direct) | Groq API (via backend) |
 | Notifications | None | Push notifications |
 | Offline | Limited | Better with caching |
 | Data Sync | None | Cross-device sync |
+| Data Model | Relational | **Graph** |
+
+### Why Neo4j (Graph DB) vs Supabase (Relational)?
+
+**Neo4j advantages for StudyMate:**
+- **Relationship-focused**: Perfect for tracking student-subject-chapter relationships
+- **Performance**: Fast queries for connected data (e.g., "students with similar weak subjects")
+- **Flexibility**: Easy to add new relationships without schema changes
+- **Recommendations**: Built-in graph algorithms for study recommendations
+- **AuraDB Free**: Generous free tier for startups
+
+**Example Graph Queries:**
+```cypher
+// Find students with similar weak subjects
+MATCH (u1:User)-[:HAS_PERFORMANCE]->(p1:Performance)
+WHERE p1.status = 'red'
+WITH u1, collect(p1.subject) as weak1
+MATCH (u2:User)-[:HAS_PERFORMANCE]->(p2:Performance)
+WHERE u1.id < u2.id AND p2.status = 'red'
+WITH u1, u2, weak1, collect(p2.subject) as weak2
+RETURN u1.name, u2.name,
+       apoc.coll.intersection(weak1, weak2) as commonSubjects
+
+// Subject difficulty ranking
+MATCH (u:User)-[:TOOK]->(q:Quiz)
+WITH q.subject as subject, avg(q.percentage) as avgScore
+RETURN subject, avgScore
+ORDER BY avgScore ASC
+```
 
 The mobile app connects to **auth and database only** - it doesn't share localStorage with the web app.
 
