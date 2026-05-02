@@ -1,7 +1,7 @@
 import { useApp } from '../context/AppContext';
 import { SUBJECTS, SUBJECT_LIST } from '../data/syllabus';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, Trophy, AlertCircle, Target, Award, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
+import { BarChart3, Trophy, AlertCircle, Target, Award, BookOpen, ChevronDown, ChevronUp, Calendar, Timer, Sparkles, Zap, Flame, Star, TrendingUp, Clock } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Dashboard() {
@@ -34,17 +34,30 @@ export default function Dashboard() {
 
   // Achievement badges
   const badges = [
-    { name: 'First Quiz', icon: '🎯', unlocked: totalQuizzes >= 1, desc: 'Complete your first quiz' },
-    { name: '5 Quizzes Done', icon: '📚', unlocked: totalQuizzes >= 5, desc: 'Complete 5 quizzes' },
-    { name: 'Scored 100%', icon: '💯', unlocked: state.results.some(r => r.percentage === 100), desc: 'Get a perfect score' },
-    { name: 'Improved 20%+', icon: '📈', unlocked: false, desc: 'Improve score by 20%+' },
+    { name: 'First Quiz', icon: '🎯', unlocked: totalQuizzes >= 1, desc: 'Complete your first quiz', color: 'bg-blue-100 text-blue-600' },
+    { name: '5 Quizzes Done', icon: '📚', unlocked: totalQuizzes >= 5, desc: 'Complete 5 quizzes', color: 'bg-purple-100 text-purple-600' },
+    { name: '10 Quizzes Done', icon: '📖', unlocked: totalQuizzes >= 10, desc: 'Complete 10 quizzes', color: 'bg-indigo-100 text-indigo-600' },
+    { name: 'Scored 100%', icon: '💯', unlocked: state.results.some(r => r.percentage === 100), desc: 'Get a perfect score', color: 'bg-green-100 text-green-600' },
+    { name: 'Score 90%+', icon: '🏆', unlocked: state.results.some(r => r.percentage >= 90), desc: 'Score 90% or higher', color: 'bg-yellow-100 text-yellow-600' },
+    { name: 'Master Subject', icon: '⭐', unlocked: bestSubject && bestSubject[1] >= 85, desc: 'Achieve 85%+ in any subject', color: 'bg-orange-100 text-orange-600' },
+    { name: 'Night Owl', icon: '🦉', unlocked: state.results.some(r => {
+      const hour = new Date(r.createdAt).getHours();
+      return hour >= 22 || hour <= 5;
+    }), desc: 'Study late night (10PM-5AM)', color: 'bg-indigo-100 text-indigo-600' },
+    { name: 'Early Bird', icon: '�', unlocked: state.results.some(r => {
+      const hour = new Date(r.createdAt).getHours();
+      return hour >= 5 && hour <= 8;
+    }), desc: 'Study early morning (5AM-8AM)', color: 'bg-amber-100 text-amber-600' },
+    { name: 'Streak 3 Days', icon: '🔥', unlocked: false, desc: 'Study 3 days in a row', color: 'bg-red-100 text-red-600' },
     { name: 'All Green', icon: '🌟', unlocked: SUBJECT_LIST.some(s => {
       const chapters = SUBJECTS[s].chapters;
       return chapters.length > 0 && chapters.every(c => {
         const key = `${s}|${c}`;
         return state.performance[key]?.status === 'green';
       });
-    }), desc: 'All chapters green in a subject' },
+    }), desc: 'All chapters green in a subject', color: 'bg-emerald-100 text-emerald-600' },
+    { name: 'Concept Master', icon: '💡', unlocked: state.concepts.length >= 5, desc: 'Get 5+ concept explanations', color: 'bg-cyan-100 text-cyan-600' },
+    { name: 'Revision Pro', icon: '📝', unlocked: state.history.filter(h => h.activityType === 'notes').length >= 3, desc: 'Generate 3+ revision notes', color: 'bg-pink-100 text-pink-600' },
   ];
 
   // Empty state
@@ -90,6 +103,58 @@ export default function Dashboard() {
           <AlertCircle size={18} className="mx-auto text-red-500 mb-1" />
           <p className="text-sm font-bold truncate">{weakestSubject ? weakestSubject[0] : '—'}</p>
           <p className="text-[10px] text-gray-500">Needs Work</p>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() => navigate('/focus')}
+          className="card flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+        >
+          <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+            <Timer size={20} className="text-blue-600 dark:text-blue-400" />
+          </div>
+          <div className="text-left">
+            <p className="text-sm font-semibold">Focus Timer</p>
+            <p className="text-[10px] text-gray-500">Pomodoro study</p>
+          </div>
+        </button>
+        <button
+          onClick={() => navigate('/calendar')}
+          className="card flex items-center gap-3 p-3 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+        >
+          <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+            <Calendar size={20} className="text-purple-600 dark:text-purple-400" />
+          </div>
+          <div className="text-left">
+            <p className="text-sm font-semibold">Exam Calendar</p>
+            <p className="text-[10px] text-gray-500">Add events</p>
+          </div>
+        </button>
+      </div>
+
+      {/* Exam Countdown - Hardcoded for ICSE/CBSE 2026 */}
+      <div className="card bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <Clock size={16} /> Board Exams 2026
+          </h3>
+          <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">Feb-March</span>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="bg-white/10 rounded-lg p-2">
+            <p className="text-xl font-bold">{Math.max(0, Math.ceil((new Date('2026-02-15') - new Date()) / (1000 * 60 * 60 * 24)))}</p>
+            <p className="text-[10px] opacity-80">Days Left</p>
+          </div>
+          <div className="bg-white/10 rounded-lg p-2">
+            <p className="text-xl font-bold">{Math.max(0, Math.ceil((new Date('2026-02-15') - new Date()) / (1000 * 60 * 60 * 24 * 30)))}</p>
+            <p className="text-[10px] opacity-80">Months</p>
+          </div>
+          <div className="bg-white/10 rounded-lg p-2">
+            <p className="text-xl font-bold">{new Date().getFullYear() === 2025 ? 'Class 10' : 'Class 10'}</p>
+            <p className="text-[10px] opacity-80">Target</p>
+          </div>
         </div>
       </div>
 

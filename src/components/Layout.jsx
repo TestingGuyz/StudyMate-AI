@@ -1,12 +1,12 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, HelpCircle, Lightbulb, BarChart3, BookOpen, Settings } from 'lucide-react';
+import { Home, HelpCircle, Lightbulb, BarChart3, BookOpen, Settings, Calendar, Timer } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: Home, label: 'Home' },
+  { to: '/focus', icon: Timer, label: 'Focus' },
   { to: '/explain', icon: Lightbulb, label: 'Explain' },
-  { to: '/dashboard', icon: BarChart3, label: 'Dashboard' },
-  { to: '/notes', icon: BookOpen, label: 'Notes' },
-  { to: '/reminders', icon: HelpCircle, label: 'Remind' },
+  { to: '/dashboard', icon: BarChart3, label: 'Stats' },
+  { to: '/calendar', icon: Calendar, label: 'Calendar' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 

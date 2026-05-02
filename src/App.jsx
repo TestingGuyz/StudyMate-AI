@@ -13,6 +13,8 @@ import Dashboard from './pages/Dashboard';
 import RevisionNotes from './pages/RevisionNotes';
 import Reminders from './pages/Reminders';
 import Settings from './pages/Settings';
+import Calendar from './pages/Calendar';
+import FocusTimer from './pages/FocusTimer';
 
 function App() {
   const { state } = useApp();
@@ -41,6 +43,8 @@ function App() {
         <Route path="/notes" element={<RevisionNotes />} />
         <Route path="/reminders" element={<Reminders />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/calendar" element={<Calendar />} />
+        <Route path="/focus" element={<FocusTimer />} />
       </Routes>
     </Layout>
   );

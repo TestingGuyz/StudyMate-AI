@@ -1,7 +1,8 @@
 import { useApp } from '../context/AppContext';
 import { SUBJECT_LIST, MOTIVATIONAL_QUOTES } from '../data/syllabus';
 import SubjectCard from '../components/SubjectCard';
-import { BookOpen, Trophy, Target } from 'lucide-react';
+import { BookOpen, Trophy, Target, Zap } from 'lucide-react';
+import AppInstallPopup from '../components/AppInstallPopup';
 
 export default function Home() {
   const { state } = useApp();
@@ -55,6 +56,9 @@ export default function Home() {
       <div className="card bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 text-center py-3">
         <p className="text-sm text-gray-600 dark:text-gray-300">{quote}</p>
       </div>
+
+      {/* App Install Popup */}
+      <AppInstallPopup />
     </div>
   );
 }
