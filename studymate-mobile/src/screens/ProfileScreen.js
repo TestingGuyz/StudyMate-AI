@@ -59,6 +59,29 @@ export default function ProfileScreen() {
               </View>
             </View>
           )}
+
+          {user?.target && (
+            <View style={styles.goalContainer}>
+              <Ionicons name="trophy" size={16} color="#F59E0B" />
+              <Text style={styles.goalText}><Text style={styles.goalLabel}>Goal: </Text>{user.target}</Text>
+            </View>
+          )}
+
+          {user?.motive && (
+            <View style={styles.motiveContainer}>
+              <Ionicons name="heart" size={16} color="#EF4444" />
+              <Text style={styles.motiveText}><Text style={styles.motiveLabel}>Why: </Text>{user.motive}</Text>
+            </View>
+          )}
+
+          {user?.examDate && (
+            <View style={styles.examDateContainer}>
+              <Ionicons name="calendar" size={16} color="#10B981" />
+              <Text style={styles.examDateText}>
+                <Text style={styles.examDateLabel}>Exam: </Text>{user.examDate}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Stats */}
@@ -170,6 +193,57 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#92400E',
     fontWeight: '500',
+  },
+  goalContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  goalText: {
+    fontSize: 13,
+    color: '#92400E',
+  },
+  goalLabel: {
+    fontWeight: '600',
+  },
+  motiveContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  motiveText: {
+    fontSize: 13,
+    color: '#991B1B',
+  },
+  motiveLabel: {
+    fontWeight: '600',
+  },
+  examDateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  examDateText: {
+    fontSize: 13,
+    color: '#065F46',
+  },
+  examDateLabel: {
+    fontWeight: '600',
   },
   statsCard: {
     flexDirection: 'row',

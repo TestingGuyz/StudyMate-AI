@@ -26,6 +26,9 @@ export default function SignupScreen({ navigation }) {
   const [studentName, setStudentName] = useState('');
   const [studentClass, setStudentClass] = useState('10');
   const [board, setBoard] = useState('ICSE');
+  const [target, setTarget] = useState('');
+  const [motive, setMotive] = useState('');
+  const [examDate, setExamDate] = useState('2026-02-15');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -70,6 +73,10 @@ export default function SignupScreen({ navigation }) {
       name: studentName,
       class: studentClass,
       board: board,
+      target: target,
+      motive: motive,
+      examDate: examDate,
+      weakSubjects: [],
       darkMode: false,
     };
 
@@ -210,6 +217,42 @@ export default function SignupScreen({ navigation }) {
                     </Text>
                   </TouchableOpacity>
                 ))}
+              </View>
+
+              <Text style={styles.label}>What's your goal? (Target)</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="trophy-outline" size={20} color="#6B7280" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., Score 95% in ICSE, Get into IIT"
+                  value={target}
+                  onChangeText={setTarget}
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
+
+              <Text style={styles.label}>Why are you studying? (Motive)</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="heart-outline" size={20} color="#6B7280" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., Make parents proud, Future career"
+                  value={motive}
+                  onChangeText={setMotive}
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
+
+              <Text style={styles.label}>Target Exam Date</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="calendar-outline" size={20} color="#6B7280" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="YYYY-MM-DD (e.g., 2026-02-15)"
+                  value={examDate}
+                  onChangeText={setExamDate}
+                  placeholderTextColor="#9CA3AF"
+                />
               </View>
 
               <View style={styles.buttonRow}>

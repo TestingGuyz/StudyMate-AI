@@ -1,10 +1,9 @@
 import neo4j from 'neo4j-driver';
 
 // Neo4j AuraDB credentials
-// Replace with your actual AuraDB credentials
-const NEO4J_URI = 'neo4j+s://your-instance.databases.neo4j.io';
-const NEO4J_USER = 'neo4j';
-const NEO4J_PASSWORD = 'your-password';
+const NEO4J_URI = 'neo4j+s://a682f5f9.databases.neo4j.io';
+const NEO4J_USER = 'a682f5f9';
+const NEO4J_PASSWORD = 'W4XInMGimhNWAqksqbQvgH76ykIHA-0bCOesj9kstJ8';
 
 let driver = null;
 
@@ -65,7 +64,7 @@ export const neo4jAuth = {
         throw new Error('User already exists');
       }
 
-      // Create new user node
+      // Create new user node with all fields
       const result = await session.run(
         `
         CREATE (u:User {
@@ -77,6 +76,8 @@ export const neo4jAuth = {
           board: $board,
           weakSubjects: $weakSubjects,
           examDate: $examDate,
+          target: $target,
+          motive: $motive,
           onboardingComplete: false,
           darkMode: false,
           createdAt: datetime(),
@@ -92,6 +93,8 @@ export const neo4jAuth = {
           board: userData.board,
           weakSubjects: userData.weakSubjects || [],
           examDate: userData.examDate || null,
+          target: userData.target || '',
+          motive: userData.motive || '',
         }
       );
 
